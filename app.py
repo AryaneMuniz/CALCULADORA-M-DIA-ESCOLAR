@@ -1,70 +1,84 @@
 import streamlit as st
 import pandas as pd
+import uuid
 
+st.set_page_config(page_title="Calculadora de Média Escolar", layout="centered")
+
+# Inicializa o estado da sessão
 if "dados" not in st.session_state:
     st.session_state["dados"] = []
 
-st.title("Calculadora de Média Escolar")
+st.title("📚 Calculadora de Média Escolar")
 
-nome = st.text_input("Nome do aluno")
-serie = st.selectbox("Série do aluno", ["1º ano", "2º ano", "3º ano", "4º ano", "5º ano", 
-                                        "6º ano", "7º ano", "8º ano", "9º ano", 
-                                        "1º ano EM", "2º ano EM", "3º ano EM"])
+# Layout com colunas para nome e série
+col1, col2 = st.columns(2)
+with col1:
+    nome = st.text_input("Nome do aluno")
+with col2:
+    serie = st.selectbox(
+        "Série do aluno", 
+        ["1º ano", "2º ano", "3º ano", "4º ano", "5º ano", 
+         "6º ano", "7º ano", "8º ano", "9º ano", 
+         "1º ano EM", "2º ano EM", "3º ano EM"]
+    )
 
-# Agora com text_input para diferenciar nota zero de "não preenchida"
+st.markdown("### Notas das Avaliações")
 avaliacoes = []
 for i in range(1, 5):
-    aval = st.text_input(f"{i}ª Avaliação")
-    avaliacoes.append(aval)
+    nota = st.number_input(f"{i}ª Avaliação", min_value=0.0, max_value=10.0, step=0.1, key=f"nota_{i}")
+    avaliacoes.append(nota)
 
-if st.button("Calcular"):
-    notas_formatadas = []
-    notas_validas = []
+if st.button("📊 Calcular"):
+    if not nome.strip():
+        st.warning("Por favor, insira o nome do aluno.")
+        st.stop()
 
-    for aval in avaliacoes:
-        try:
-            nota = float(aval)
-            if 0.0 <= nota <= 10.0:
-                notas_formatadas.append(nota)
-                notas_validas.append(nota)
-            else:
-                st.warning("As notas devem estar entre 0 e 10.")
-                break
-        except:
-            notas_formatadas.append("Não Avaliado")
-
+    notas_validas = [nota for nota in avaliacoes if isinstance(nota, float)]
+    
     if notas_validas:
         media = sum(notas_validas) / len(notas_validas)
         situacao = "Aprovado(a)" if media >= 7 else "Reprovado(a)"
 
-        st.success(f"Média do aluno {nome} ({serie}): {media:.2f} - {situacao}")
+        st.success(f"✅ Média do aluno **{nome}** ({serie}): **{media:.2f}** - **{situacao}**")
 
         st.session_state["dados"].append({
+            "ID": str(uuid.uuid4()),
             "Nome": nome,
             "Série": serie,
-            "Primeira Avaliação": notas_formatadas[0],
-            "Segunda Avaliação": notas_formatadas[1],
-            "Terceira Avaliação": notas_formatadas[2],
-            "Quarta Avaliação": notas_formatadas[3],
+            "Primeira Avaliação": avaliacoes[0],
+            "Segunda Avaliação": avaliacoes[1],
+            "Terceira Avaliação": avaliacoes[2],
+            "Quarta Avaliação": avaliacoes[3],
             "Média": round(media, 2),
             "Situação": situacao
         })
+
+        st.experimental_rerun()
     else:
         st.warning("Preencha pelo menos uma nota válida para calcular a média.")
 
-# Mostrar histórico e opção de exclusão
+# Exibir histórico com filtros e exclusão
 if st.session_state["dados"]:
+    st.markdown("---")
+    st.subheader("📋 Histórico de Alunos")
+
     df = pd.DataFrame(st.session_state["dados"])
-    st.write("Histórico de alunos:")
-    st.dataframe(df)
 
-    excluir_nome = st.selectbox("Selecione um aluno para excluir:", df["Nome"].tolist(), key="excluir_nome")
-    if st.button("Excluir aluno"):
-        st.session_state["dados"] = [dado for dado in st.session_state["dados"] if dado["Nome"] != excluir_nome]
-        st.success(f"Aluno {excluir_nome} excluído com sucesso!")
+    filtro_nome = st.text_input("🔍 Buscar por nome")
+    if filtro_nome:
+        df = df[df["Nome"].str.contains(filtro_nome, case=False)]
 
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("Baixar como CSV", csv, "notas_alunos.csv", "text/csv")
+    st.dataframe(df.drop(columns=["ID"]), use_container_width=True)
 
+    if not df.empty:
+        aluno_excluir = st.selectbox("Selecione um aluno para excluir:", 
+                                     options=df["Nome"] + " - " + df["ID"].str[:8])
+        if st.button("🗑️ Excluir aluno"):
+            id_excluir = aluno_excluir.split(" - ")[-1]
+            st.session_state["dados"] = [d for d in st.session_state["dados"] if not d["ID"].startswith(id_excluir)]
+            st.success("Aluno excluído com sucesso!")
+            st.experimental_rerun()
 
-
+    # Botão para baixar CSV
+    csv = df.drop(columns=["ID"]).to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Baixar histórico como CSV", csv, "notas_alunos.csv", "text/csv")
