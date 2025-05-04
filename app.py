@@ -10,7 +10,7 @@ if "dados" not in st.session_state:
 
 st.title("📚 Calculadora de Média Escolar")
 
-# Layout com colunas para nome e série
+# Layout para nome e série
 col1, col2 = st.columns(2)
 with col1:
     nome = st.text_input("Nome do aluno")
@@ -34,7 +34,7 @@ if st.button("📊 Calcular"):
         st.stop()
 
     notas_validas = [nota for nota in avaliacoes if isinstance(nota, float)]
-    
+
     if notas_validas:
         media = sum(notas_validas) / len(notas_validas)
         situacao = "Aprovado(a)" if media >= 7 else "Reprovado(a)"
@@ -57,7 +57,7 @@ if st.button("📊 Calcular"):
     else:
         st.warning("Preencha pelo menos uma nota válida para calcular a média.")
 
-# Exibir histórico com filtros e exclusão
+# Mostrar histórico, filtro e exclusão
 if st.session_state["dados"]:
     st.markdown("---")
     st.subheader("📋 Histórico de Alunos")
@@ -77,24 +77,23 @@ if st.session_state["dados"]:
             id_excluir = aluno_excluir.split(" - ")[-1]
             st.session_state["dados"] = [d for d in st.session_state["dados"] if not d["ID"].startswith(id_excluir)]
             st.success("Aluno excluído com sucesso!")
-            st.experimental_rerun()
+            st.rerun()
 
-   # Define a ordem das colunas
-colunas_ordenadas = [
-    "Nome", "Série", 
-    "Primeira Avaliação", "Segunda Avaliação", 
-    "Terceira Avaliação", "Quarta Avaliação", 
-    "Média", "Situação"
-]
+    # Exportação CSV formatada
+    colunas_ordenadas = [
+        "Nome", "Série", 
+        "Primeira Avaliação", "Segunda Avaliação", 
+        "Terceira Avaliação", "Quarta Avaliação", 
+        "Média", "Situação"
+    ]
 
-df_formatado = df[colunas_ordenadas]
+    if all(col in df.columns for col in colunas_ordenadas):
+        df_formatado = df[colunas_ordenadas]
+        csv = df_formatado.to_csv(index=False, sep=';', encoding='utf-8')
 
-# Gera CSV com ponto e vírgula como separador
-csv = df_formatado.to_csv(index=False, sep=';', encoding='utf-8')
-
-st.download_button(
-    label="⬇️ Baixar histórico como CSV",
-    data=csv,
-    file_name="notas_alunos.csv",
-    mime="text/csv"
-)
+        st.download_button(
+            label="⬇️ Baixar histórico como CSV",
+            data=csv,
+            file_name="notas_alunos.csv",
+            mime="text/csv"
+        )
