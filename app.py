@@ -53,7 +53,7 @@ if st.button("📊 Calcular"):
             "Situação": situacao
         })
 
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.warning("Preencha pelo menos uma nota válida para calcular a média.")
 
