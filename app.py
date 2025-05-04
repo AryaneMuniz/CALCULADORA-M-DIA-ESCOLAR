@@ -80,5 +80,23 @@ if st.session_state["dados"]:
             st.experimental_rerun()
 
     # Botão para baixar CSV
-    csv = df.drop(columns=["ID"]).to_csv(index=False).encode('utf-8')
-    st.download_button("⬇️ Baixar histórico como CSV", csv, "notas_alunos.csv", "text/csv")
+   # Define a ordem das colunas manualmente
+colunas_ordenadas = [
+    "Nome", "Série", 
+    "Primeira Avaliação", "Segunda Avaliação", 
+    "Terceira Avaliação", "Quarta Avaliação", 
+    "Média", "Situação"
+]
+
+df_formatado = df[colunas_ordenadas]
+
+# Gera CSV limpo e formatado
+csv = df_formatado.to_csv(index=False, sep=',', encoding='utf-8')
+
+# Botão para download
+st.download_button(
+    label="⬇️ Baixar histórico como CSV",
+    data=csv,
+    file_name="notas_alunos.csv",
+    mime="text/csv"
+)
