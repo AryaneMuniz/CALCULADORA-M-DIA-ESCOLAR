@@ -79,8 +79,7 @@ if st.session_state["dados"]:
             st.success("Aluno excluído com sucesso!")
             st.experimental_rerun()
 
-    # Botão para baixar CSV
-   # Define a ordem das colunas manualmente
+   # Define a ordem das colunas
 colunas_ordenadas = [
     "Nome", "Série", 
     "Primeira Avaliação", "Segunda Avaliação", 
@@ -90,10 +89,9 @@ colunas_ordenadas = [
 
 df_formatado = df[colunas_ordenadas]
 
-# Gera CSV limpo e formatado
-csv = df_formatado.to_csv(index=False, sep=',', encoding='utf-8')
+# Gera CSV com ponto e vírgula como separador
+csv = df_formatado.to_csv(index=False, sep=';', encoding='utf-8')
 
-# Botão para download
 st.download_button(
     label="⬇️ Baixar histórico como CSV",
     data=csv,
